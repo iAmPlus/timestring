@@ -243,6 +243,7 @@ class Date(object):
                 if not hour and daytime is None and not delta:
                     new_date = new_date.replace(hour=0, minute=0, second=0)
 
+
             self.date = new_date
 
         else:
