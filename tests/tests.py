@@ -337,18 +337,6 @@ class T(unittest.TestCase):
         self.assertTrue(Date('tuesday') in Range('next 7 days'))
         self.assertTrue(Date('next tuesday') in Range('next 14 days'))
 
-    def test_ago(self):
-        now = datetime.now().replace(microsecond=0)
-        range = Range('1 year ago')
-        self.assertEqual(range.start.date.replace(microsecond=0), now.replace(year=now.year - 2))
-        self.assertEqual(range.end.date.replace(microsecond=0), now.replace(year=now.year - 1))
-
-        range = Range('2 weeks ago')
-        week = timedelta(days=7)
-        self.assertEqual(range.start.date.replace(microsecond=0), now - 3 * week)
-        self.assertEqual(range.end.date.replace(microsecond=0), now - 2 * week)
-
-
     def test_psql_infinity(self):
         d = Date('infinity')
         self.assertTrue(d > 'now')

@@ -75,39 +75,40 @@ class Date(object):
 
             # TODO Refactor
             if isinstance(date, dict):  # This will always be True
-                # Initial date.
-                now = get_timezone_time(tz)#datetime(*time.localtime()[:3])
+                now = datetime.now(tz)
                 new_date = copy(now)
+                delta = date.get('delta') or date.get('delta_2')
+                num = date.get('num')
+                ref = date.get('ref')
 
                 if date.get('unixtime'):
                     new_date = datetime.fromtimestamp(int(date.get('unixtime')))
 
-                # !number of (days|...) (ago)?
-                elif date.get('num') and (date.get('delta') or date.get('delta_2')):
-                    if date.get('num', '').find('couple') > -1:
-                        i = 2 * int(1 if date.get('ago', True) or date.get('ref') == 'last' else -1)
-                    else:
-                        i = int(text2num(date.get('num', 'one'))) * int(1 if date.get('ago') or (date.get('ref', '') or '') == 'last' else -1)
+                # Number of (days|...) [ago]
+                elif num and delta:
+                    delta = delta.lower()
 
-                    delta = (date.get('delta') or date.get('delta_2')).lower()
+                    sign = -1 if date.get('ago', True) or ref == 'last' else 1
+                    if 'couple' in (num or ''):
+                        mag = 2
+                    else:
+                        mag = int(text2num(num or 'one'))
+
+                    i = sign * mag
+
                     if delta.startswith('y'):
                         try:
-                            new_date = new_date.replace(year=(new_date.year - i))
-                        # day is out of range for month
-                        except ValueError:
-                            new_date = new_date - timedelta(days=(365*i))
+                            new_date = new_date.replace(year=new_date.year + i)
+                        except ValueError:  # Leap date in a non-leap year
+                            new_date += timedelta(days=365 * i)
                     elif delta.startswith('month'):
                         try:
-                            new_date = new_date.replace(month=(new_date.month - i))
-                        # day is out of range for month
-                        except ValueError:
-                            new_date = new_date - timedelta(days=(30*i))
+                            new_date = new_date.replace(month=new_date.month + i)
+                        except ValueError:  # No such day in that month
+                            new_date += timedelta(days=30 * i)
 
                     elif delta.startswith('q'):
-                        '''
-                        This section is not working...
-                        Most likely need a generator that will take me to the right quater.
-                        '''
+                        # TODO This section is not working
                         q1, q2, q3, q4 = datetime(new_date.year, 1, 1), datetime(new_date.year, 4, 1), datetime(new_date.year, 7, 1), datetime(new_date.year, 10, 1)
                         if q1 <= new_date < q2:
                             # We are in Q1
@@ -124,15 +125,20 @@ class Date(object):
                         else:
                             # We are in Q4
                             pass
-                        new_date = new_date - timedelta(days=(91*i))
+                        new_date += timedelta(days= 91 * i)
 
                     elif delta.startswith('w'):
-                        new_date = new_date - timedelta(days=(i * 7))
+                        new_date += timedelta(days=i * 7)
+                    elif delta.startswith('d'):
+                        new_date += timedelta(days=i)
+                    elif delta.startswith('h'):
+                        new_date += timedelta(hours=i)
+                    elif delta.startswith('m'):
+                        new_date += timedelta(minutes=i)
+                    elif delta.startswith('s'):
+                        new_date += timedelta(seconds=i)
 
-                    else:
-                        new_date = new_date - timedelta(**{('days' if delta.startswith('d') else 'hours' if delta.startswith('h') else 'minutes' if delta.startswith('m') else 'seconds'): i})
 
-                ref = date.get('ref')
                 # !dow
                 dow = next((date.get(key) for key in ('day', 'day_2', 'day_3')
                            if date.get(key)),
@@ -234,10 +240,9 @@ class Date(object):
                     new_date = new_date.replace(month=1)
                 if (year != [] or month) and dow is None and not (day or hour):
                     new_date = new_date.replace(day=1)
-                if not hour and daytime is None:
+                if not hour and daytime is None and not delta:
                     new_date = new_date.replace(hour=0, minute=0, second=0)
 
-            new_date = new_date.replace(microsecond=0)
             self.date = new_date
 
         else:

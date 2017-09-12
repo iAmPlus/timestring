@@ -496,6 +496,34 @@ class RangeTest(unittest.TestCase):
                           datetime(2017, 6, 16, 19, 37, 22),
                           datetime(2017, 6, 16, 23, 37, 22))
 
+    def test_ago(self):
+        self.assert_range('2 years ago',
+                          datetime(2015, 6, 16),
+                          datetime(2015, 6, 17))
+
+        self.assert_range('2 months ago',
+                          datetime(2017, 4, 16),
+                          datetime(2017, 4, 17))
+
+        self.assert_range('2 weeks ago',
+                          datetime(2017, 6, 2),
+                          datetime(2017, 6, 3))
+
+        self.assert_range('2 days ago',
+                          datetime(2017, 6, 14),
+                          datetime(2017, 6, 15))
+
+        self.assert_range('2 hours ago',
+                          datetime(2017, 6, 16, 17),
+                          datetime(2017, 6, 16, 18))
+
+        self.assert_range('2 minutes ago',
+                          datetime(2017, 6, 16, 19, 35),
+                          datetime(2017, 6, 16, 19, 36))
+
+        self.assert_range('2 seconds ago',
+                          datetime(2017, 6, 16, 19, 37, 20),
+                          datetime(2017, 6, 16, 19, 37, 21))
 
 
 def main():

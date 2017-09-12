@@ -102,8 +102,18 @@ class Range(object):
 
                     # ago                               [     ](     )x
                     elif group['ago']:
-                        end = start - di
-                        start = end - ('1 ' + delta)
+                        start = Date(res.string)
+                        if not re.match('(hour|minute|second)s?', delta):
+                            start = start.replace(hour=0, minute=0, second=0)
+                            end = start + '1 day'
+                        elif delta.startswith('hour'):
+                            start = start.replace(minute=0, second=0)
+                            end = start + '1 hour'
+                        elif delta.startswith('minute'):
+                            start = start.replace(second=0)
+                            end = start + '1 minute'
+                        else:
+                            end = start + '1 second'
 
                     # "last 2 weeks", "the last hour"   [     ][     ]x
                     elif group['ref'] in ['last'] and (group['num'] or group['article']):
