@@ -44,6 +44,12 @@ class DateTest(unittest.TestCase):
         self.assert_date('2 seconds ago', datetime(2017, 6, 16, 19, 37, 20))
 
 
+    def test_ago_on(self):
+        self.assert_date('2 years ago today', datetime(2015, 6, 16, 19, 37, 22))
+        self.assert_date('2 years ago on this date', datetime(2015, 6, 16, 19, 37, 22))
+        self.assert_date('2 months ago today', datetime(2017, 4, 16, 19, 37, 22))
+        self.assert_date('2 weeks ago on Tuesday', datetime(2017, 6, 16, 19, 37, 22))
+
 def main():
     os.environ['TZ'] = 'UTC'
     time.tzset()

@@ -1,4 +1,10 @@
 import re
+
+
+DAY = r'now|today|yesterday|tomorrow' \
+      r'|mondays?|tuesdays?|wednesdays?|thursdays?|fridays?|saturdays?|sundays?' \
+      r'|mon|tues?|wedn?|thur?|fri|sat|sun'
+
 TIMESTRING_RE = re.compile(re.sub('[\t\n\s]', '', re.sub('(\(\?\#[^\)]+\))', '', r'''
     (
         ((?P<prefix>between|from|before|after|\>=?|\<=?|greater\s+th(a|e)n(\s+a)?|less\s+th(a|e)n(\s+a)?)\s+)?
@@ -15,20 +21,27 @@ TIMESTRING_RE = re.compile(re.sub('[\t\n\s]', '', re.sub('(\(\?\#[^\)]+\))', '',
                     (?P<article>the\s)?
                     ((?P<ref>next|upcoming|last|prev(ious)|past|this|current)\s+)?
                     (?P<main>
-                        (?# =-=-=-= Matches:: number-frame-ago?, "4 weeks", "sixty days ago" =-=-=-= )
+                        (?# =-=-=-= Matches <number> <unit> [ago [[on] <day>]].
+                              Examples:
+                              "4 weeks"
+                              "4 weeks ago on Tuesday"
+                              "4 years ago today"
+                              "sixty days ago"
+                         =-=-=-= )
                         (
                             (?P<num>((\d+|couple(\s+of)?|one|two|twenty|twelve|three|thirty|thirteen|four(teen|ty)?|five|fif(teen|ty)|six(teen|ty)?|seven(teen|ty)?|eight(een|y)?|nine(teen|ty)?|ten|eleven|hundred)\s*)*)
                             (
                                 \b(?P<delta>seconds?|minutes?|hours?|days?|weeks?|months?|quarters?|years?)|
                                 ((?<![a-zA-Z])(?P<delta_2>[YyQqDdHhMmSs])(?!\w))
                             )
-                            (\s+(?P<ago>ago))?
+                            (\s+(?P<ago>ago((\s+on)?\s+(?P<day_1>''' + DAY + '''))?))?
+
                         )
 
                         |
 
                         (?# =-=-=-= Matches Days =-=-=-= )
-                        (?P<day_2>\b(yesterday|today|now|tomorrow|mondays?|tuesdays?|wednesdays?|thursdays?|fridays?|saturdays?|sundays?|mon|tues?|wedn?|thur?|fri|sat|sun)\b)
+                        (?P<day_2>\b(''' + DAY + r''')\b)
 
                         |
 

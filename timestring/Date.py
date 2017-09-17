@@ -138,6 +138,12 @@ class Date(object):
                     elif delta.startswith('s'):
                         new_date += timedelta(seconds=i)
 
+                    if date.get('day_1'):  # ago on
+                        if True:
+                            pass
+                        else:
+                            raise TimestringInvalid('Cannot specify day without years, months, weeks and days ago')
+
 
                 # !dow
                 dow = next((date.get(key) for key in ('day', 'day_2', 'day_3')
@@ -242,7 +248,6 @@ class Date(object):
                     new_date = new_date.replace(day=1)
                 if not hour and daytime is None and not delta:
                     new_date = new_date.replace(hour=0, minute=0, second=0)
-
 
             self.date = new_date
 
