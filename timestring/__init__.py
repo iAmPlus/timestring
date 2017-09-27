@@ -9,6 +9,11 @@ CONTEXT_FUTURE= 1  # "Reservation for today"
 CONTEXT_PREV = -2  # "Monday" if today is Monday means the previous Monday
 CONTEXT_NEXT = 2   # "Monday" if today is Monday means next Monday
 
+WEEKEND_START_DAY = 5    # Friday
+WEEKEND_START_HOUR = 18  # 6pm
+WEEKEND_END_DAY = 1   # Monday
+WEEKEND_END_HOUR = 0  # Midnight (morning)
+
 
 class TimestringInvalid(Exception):
     def __init__(self, reason):

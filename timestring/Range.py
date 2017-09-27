@@ -5,7 +5,8 @@ from datetime import datetime, timedelta
 
 from timestring.Date import Date
 from timestring import TimestringInvalid, \
-    CONTEXT_PREV, CONTEXT_NEXT, CONTEXT_PAST, CONTEXT_FUTURE
+    CONTEXT_PREV, CONTEXT_NEXT, CONTEXT_PAST, CONTEXT_FUTURE, \
+    WEEKEND_START_DAY, WEEKEND_START_HOUR, WEEKEND_END_DAY, WEEKEND_END_HOUR
 from timestring.timestring_re import TIMESTRING_RE
 
 
@@ -91,6 +92,7 @@ class Range(object):
                     delta = (group.get('delta') or group.get('delta_2')).lower()
 
                     start = Date("now", offset=offset, tz=tz)
+                    end = None
                     di = "%s %s" % (str(int(group['num'] or 1)), delta)
 
                     # ago                               [     ](     )x
@@ -128,8 +130,14 @@ class Range(object):
                                      offset=offset,
                                      tz=tz,
                                      week_start=week_start)
-                        start = this.end
-                        end = start + di
+                        if delta.startswith('weekend'):
+                            if 'now' in this:
+                                start, end = this + di
+                            else:
+                                start, end = this
+                        else:
+                            start = this.end
+                            end = start + di
 
                     # "last 2 weeks", "the last hour"   [     ][     ]x
                     elif group['prev'] and (group['num'] or group['article']):
@@ -166,6 +174,20 @@ class Range(object):
                         elif delta.startswith('mo'):
                             start = Date(datetime(now.year, now.month, 1), offset=offset, tz=tz)
 
+                        # weekend
+                        elif delta.startswith('weekend'):
+                            days = (WEEKEND_START_DAY - start.weekday + 7) % 7
+                            start = Date(now + timedelta(days=days))
+                            start = start.replace(hour=WEEKEND_START_HOUR,
+                                                  minute=0,
+                                                  second=0,
+                                                  microsecond=0)
+                            days = (WEEKEND_END_DAY + 7 - WEEKEND_START_DAY) % 7
+                            end = Date(start.date + timedelta(days=days))
+                            end = end.replace(hour=WEEKEND_END_HOUR)
+                            start = start.replace(**offset or {})
+                            end = end.replace(**offset or {})
+
                         # week
                         elif delta.startswith('w'):
                             start = Date(res.string, tz=tz)
@@ -192,7 +214,8 @@ class Range(object):
                         else:
                             raise TimestringInvalid("Not a valid time reference")
 
-                        end = start + di
+                        if not end:
+                            end = start + di
 
                 elif group['relative_day'] or group['weekday']:
                     if verbose:
