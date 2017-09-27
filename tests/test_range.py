@@ -826,6 +826,14 @@ class RangeTest(unittest.TestCase):
                           now,
                           datetime(2017, 6, 23, WEEKEND_START_HOUR))
 
+        self.assert_range('2 weekends ago',
+                          datetime(2017, 6, 2, WEEKEND_START_HOUR),
+                          datetime(2017, 6, 5, WEEKEND_END_HOUR))
+
+        self.assert_range('2 weekends from now',
+                          datetime(2017, 6, 30, WEEKEND_START_HOUR),
+                          datetime(2017, 7, 3, WEEKEND_END_HOUR))
+
 
 def main():
     os.environ['TZ'] = 'UTC'
