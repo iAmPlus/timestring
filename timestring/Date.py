@@ -125,7 +125,7 @@ class Date(object):
                     elif date.get('in') or date.get('from_now') or ref == 'next':
                         sign = 1
                     else:
-                        raise TimestringInvalid('Missing relationship such as "ago" or "from now"')
+                        raise TimestringInvalid('Found duration but no relation to an absolute time point, such as "ago"')
 
                     if 'couple' in (num or ''):
                         mag = 2
@@ -254,8 +254,7 @@ class Date(object):
                     offset = False
 
                 # !hour
-                hour = [date.get(key) for key in ('hour', 'hour_2', 'hour_3') if date.get(key)]
-                print('>>>>>>>>', hour)
+                hour = [date.get(key) for key in ('hour', 'hour_2', 'hour_3', 'hour_4') if date.get(key)]
                 if hour:
                     new_date = new_date.replace(hour=int(max(hour)), minute=0, second=0)
                     am = [date.get(key) for key in ('am', 'am_1') if date.get(key)]
@@ -267,7 +266,7 @@ class Date(object):
                     offset = False
 
                     #minute
-                    minute = [date.get(key) for key in ('minute', 'minute_2') if date.get(key)]
+                    minute = [date.get(key) for key in ('minute', 'minute_2', 'minute_3') if date.get(key)]
                     if minute:
                         new_date = new_date.replace(minute=int(max(minute)))
 

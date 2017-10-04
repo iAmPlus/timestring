@@ -22,8 +22,10 @@ TIMESTRING_RE = re.compile(re.sub('[\t\n\s]', '', re.sub('(\(\?\#[^\)]+\))', '',
                         (?# =-=-=-= Matches:: number-frame-ago?, "4 weeks", "sixty days ago" =-=-=-= )
                         (?P<duration>
                             (\b(?P<in>in\s+))?
-                            (?P<num>((\d+|couple(\s+of)?|one|two|twenty|twelve|three|thirty|thirteen|four(teen|ty)?|five|fif(teen|ty)|six(teen|ty)?|seven(teen|ty)?|eight(een|y)?|nine(teen|ty)?|ten|eleven|hundred)\s*)+)
-                            |(?P<num_de>((\d+|Eine?|Tzwei|Zwanzig|Zwölf|Drei(zehn|ßig|zig)?|(Vier|Fünf|Sechs|Sieben|Acht|Neun)(zehn|vzig)?|zehn|elf|hundert)\s*)*)
+                            (
+                                (?P<num>((\d+|couple(\s+of)?|one|two|twenty|twelve|three|thirty|thirteen|four(teen|ty)?|five|fif(teen|ty)|six(teen|ty)?|seven(teen|ty)?|eight(een|y)?|nine(teen|ty)?|ten|eleven|hundred)\s*)+)
+                                |(?P<num_de>((\d+|Eine?|Tzwei|Zwanzig|Zwölf|Drei(zehn|ßig|zig)?|(Vier|Fünf|Sechs|Sieben|Acht|Neun)(zehn|vzig)?|zehn|elf|hundert)\s*)*)
+                            )
                             (
                                 \b(?P<delta>seconds?|minutes?|hours?|days?|weeks?|months?|quarters?|years?)
                                 |\b(?P<delta_de>sekund(en)?|minuten?|stunden?|tage?|wochen?|monate?|quarters?|jahre?)
@@ -70,7 +72,7 @@ TIMESTRING_RE = re.compile(re.sub('[\t\n\s]', '', re.sub('(\(\?\#[^\)]+\))', '',
                                 |
                             ((?P<hour_3>[012]?[0-9])\s*(?P<am_1>am|pm|p|a|o'?clock))
                                 |
-                            ((?P<hour_4>[012]?[0-9])\s*(h|uhr)\s*(?P<minute_3>[0-5]\d))
+                            ((?P<hour_4>[012]?[0-9])\s*(uhr|h)\s*(?P<minute_3>[0-5]\d)?)
                                 |
                             (?P<daytime>(after)?noon|morning|((around|about|near|by)\s+)?this\s+time|evening|(mid)?night(time)?)
                         )

@@ -213,10 +213,9 @@ class Range(object):
                                           minute=temp.minute,
                                           second=temp.second)
 
-                    hour = g('hour', 'hour_2', 'hour_3')
-                    minute = g('minute', 'minute_2')
+                    hour = g('hour', 'hour_2', 'hour_3', 'hour_4')
+                    minute = g('minute', 'minute_2', 'minute_3')
                     second = g('seconds')
-
                     if second:
                         end = start + '1 second'
                     elif minute:
