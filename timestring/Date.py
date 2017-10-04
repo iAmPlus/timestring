@@ -33,7 +33,6 @@ WEEKDAY_ORDINALS_DE = dict(
     mo=1, di=2, mi=3, do=4, fr=5, sa=6, so=7
 )
 RELATIVE_DAYS = {
-    'now': 0,
     'today': 0,
     'yesterday': -1,
     'tomorrow': 1,
@@ -42,7 +41,6 @@ RELATIVE_DAYS = {
 }
 RELATIVE_DAYS_DE = {
     'heute': 0,
-    'jetzt': 0,
     'gestern': -1,
     'morgen': 1,
     'vorgestern': -2,
@@ -81,7 +79,7 @@ class Date(object):
                 and len(str(int(float(date)))) > 4:
             self.date = datetime.fromtimestamp(int(date))
 
-        elif date == 'now' or date is None:
+        elif date in ['now', 'jetzt'] or date is None:
             self.date = datetime.now(tz)
 
         elif date == 'infinity':

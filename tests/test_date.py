@@ -6,6 +6,7 @@ import unittest
 from freezegun import freeze_time
 
 from timestring import Date
+from timestring.Date import WEEKDAY_ORDINALS_DE, RELATIVE_DAYS_DE
 
 
 @freeze_time('2017-06-16 19:37:22')
@@ -82,6 +83,36 @@ class DateTest(unittest.TestCase):
         self.assert_date('in 45 minutes', datetime(2017, 6, 16, 20, 22, 22))
         self.assert_date('in 45 seconds', datetime(2017, 6, 16, 19, 38, 7))
 
+    def test_weekdays_de(self):
+        now = datetime.now()
+
+        def test_weekday(day_name, iso):
+            self.assert_date(day_name, datetime(2017, 6, 17 + (iso + 1) % 7)),
+            d = Date(day_name)
+            self.assertLess(d.date - now, timedelta(days=7), day_name)
+            self.assertEqual(d.weekday, iso, day_name)
+
+        for name, iso in WEEKDAY_ORDINALS_DE.items():
+            test_weekday(name, iso)
+
+        d = Date('jetzt')
+        self.assertEqual(d, datetime(2017, 6, 16, 19, 37, 22))
+
+    def test_relative_day_de(self):
+        for day_name, offset in RELATIVE_DAYS_DE.items():
+            self.assert_date(day_name,
+                             datetime(2017, 6, 16 + offset))
+
+    def test_time_formats_de(self):
+        for time_str in ['22 uhr', 'um 22 uhr', '22h00']:
+            self.assert_date(time_str, datetime(2017, 6, 16, 22))
+
+        for time_str in ['um 19 uhr 30', '19 uhr 30', 'um 19h30', '19h30']:
+            self.assert_date(time_str, datetime(2017, 6, 16, 19, 30))
+
+        for time_str in ['um 19 uhr 30', '19 uhr 30', 'um 19h30', '19h30']:
+            self.assert_date('morgen ' + time_str,
+                             datetime(2017, 6, 17, 19, 30))
 
 def main():
     os.environ['TZ'] = 'UTC'

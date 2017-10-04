@@ -5,7 +5,8 @@ import unittest
 
 from freezegun import freeze_time
 
-from timestring.Range import Range, CONTEXT_PAST, CONTEXT_FUTURE
+from timestring.Range import Date, Range, CONTEXT_PAST, CONTEXT_FUTURE
+from timestring.Date import WEEKDAY_ORDINALS_DE, RELATIVE_DAYS_DE
 
 
 @freeze_time('2017-06-16 19:37:22')
@@ -418,22 +419,20 @@ class RangeTest(unittest.TestCase):
         weekday = datetime.now().strftime('%A')
 
         self.assert_range(weekday,
-                          datetime(2017, 6, 16),
-                          datetime(2017, 6, 17))
+                          datetime(2017, 6, 23),
+                          datetime(2017, 6, 24))
 
         self.assert_range('this ' + weekday,
-                          datetime(2017, 6, 16),
-                          datetime(2017, 6, 17))
+                          datetime(2017, 6, 23),
+                          datetime(2017, 6, 24))
 
         self.assert_range(weekday,
-                          datetime(2017, 6, 16),
-                          datetime.now(),
-                          context=CONTEXT_PAST)
+                          datetime(2017, 6, 23),
+                          datetime(2017, 6, 24))
 
         self.assert_range(weekday,
-                          datetime.now(),
-                          datetime(2017, 6, 17),
-                          context=CONTEXT_FUTURE)
+                          datetime(2017, 6, 23),
+                          datetime(2017, 6, 24))
 
         self.assert_range('next ' + weekday,
                           datetime(2017, 6, 23),
@@ -687,6 +686,46 @@ class RangeTest(unittest.TestCase):
         self.assert_range('since 45 seconds ago', datetime(2017, 6, 16, 19, 36, 37), now)
 
         # TODO Error cases such as "Since tomorrow"
+
+    def test_weekdays_de(self):
+        day_seconds = 24 * 60 * 60
+
+        def test_weekday(day_name, iso):
+            start_date = 17 + (iso + 1) % 7
+            self.assert_range(day_name,
+                              datetime(2017, 6, start_date),
+                              datetime(2017, 6, start_date + 1))
+            r = Range(day_name)
+            self.assertEqual(len(r), day_seconds)
+            self.assertEqual(r.start.weekday, iso, r.start.weekday)
+            self.assertEqual(r.end.weekday, iso % 7 + 1, r.end.weekday)
+            d = Date(day_name)
+            self.assertTrue(d in r, '%s: %s' % (d, r))
+
+        for name, iso in WEEKDAY_ORDINALS_DE.items():
+            test_weekday(name, iso)
+
+    def test_relative_day_de(self):
+        for day_name, offset in RELATIVE_DAYS_DE.items():
+            self.assert_range(day_name,
+                              datetime(2017, 6, 16 + offset),
+                              datetime(2017, 6, 16 + offset + 1))
+
+    def test_time_formats_de(self):
+        for time_str in ['22 uhr', 'um 22 uhr']:  # TODO 22h00
+            self.assert_range(time_str,
+                              datetime(2017, 6, 16, 22),
+                              datetime(2017, 6, 16, 23))
+
+        for time_str in ['um 19 uhr 30', '19 uhr 30', 'um 19h30', '19h30']:
+            self.assert_range(time_str,
+                              datetime(2017, 6, 16, 19, 30),
+                              datetime(2017, 6, 16, 19, 31))
+
+        for time_str in ['um 19 uhr 30', '19 uhr 30', 'um 19h30', '19h30']:
+            self.assert_range('morgen ' + time_str,
+                              datetime(2017, 6, 17, 19, 30),
+                              datetime(2017, 6, 17, 19, 31))
 
 
 def main():
