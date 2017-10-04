@@ -168,7 +168,8 @@ class Range(object):
                     start = Date(res.string, offset=offset, tz=tz, context=CONTEXT_PAST)
                     end = now
 
-                elif group['relative_day'] or group['weekday']:
+                elif group['relative_day'] or group['weekday'] \
+                        or group['relative_day_de'] or group['weekday_de']:
                     start = Date(res.string, offset=offset, tz=tz)
                     end = start + '1 day'
 

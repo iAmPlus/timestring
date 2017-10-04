@@ -28,6 +28,10 @@ WEEKDAY_ORDINALS = dict(
     mon=1, tue=2, tues=2, wed=3, wedn=3, thu=4, thur=4, fri=5, sat=6, sun=7,
     mo=1, tu=2, we=3, th=4, fr=5, sa=6, su=7,
 )
+WEEKDAY_ORDINALS_DE = dict(
+    montag=1, dienstag=2, mittwoch=3, donnerstag=4, freitag=5, samstag=6, sonntag=7,
+    mo=1, di=2, mi=3, do=4, fr=5, sa=6, so=7
+)
 RELATIVE_DAYS = {
     'now': 0,
     'today': 0,
@@ -35,6 +39,14 @@ RELATIVE_DAYS = {
     'tomorrow': 1,
     'day before yesterday': -2,
     'day after tomorrow': 2,
+}
+RELATIVE_DAYS_DE = {
+    'heute': 0,
+    'jetzt': 0,
+    'gestern': -1,
+    'morgen': 1,
+    'vorgestern': -2,
+    'übermorgen': 2,
 }
 DAYTIMES = dict(
     morning=9,
@@ -161,20 +173,26 @@ class Date(object):
                         new_date += timedelta(**{delta:i})
 
                 weekday = date.get('weekday')
+                weekday_de = date.get('weekday_de')
                 relative_day = date.get('relative_day')
-                if weekday:
+                relative_day_de = date.get('relative_day_de')
+                if weekday or weekday_de:
                     new_date = new_date.replace(hour=0, minute=0, second=0, microsecond=0)
-                    iso = WEEKDAY_ORDINALS.get(weekday)
+                    iso = WEEKDAY_ORDINALS.get(weekday) or WEEKDAY_ORDINALS_DE.get(weekday_de)
                     if iso:
                         if ref in ['next', 'upcoming']:
                             days = iso - new_date.isoweekday() + (7 if iso <= new_date.isoweekday() else 0)
                         elif ref in ['last', 'previous', 'prev'] or context == CONTEXT_PAST:
                             days = iso - new_date.isoweekday() - (7 if iso >= new_date.isoweekday() else 0)
                         else:
-                            days = iso - new_date.isoweekday() + (7 if iso < new_date.isoweekday() else 0)
+                            days = iso - new_date.isoweekday() + (7 if iso <= new_date.isoweekday() else 0)
                         new_date = new_date + timedelta(days=days)
-                elif relative_day:
-                    days = RELATIVE_DAYS.get(re.sub(r'\s+', ' ', relative_day))
+                elif relative_day or relative_day_de:
+                    days = 0
+                    if relative_day:
+                        days = RELATIVE_DAYS.get(re.sub(r'\s+', ' ', relative_day))
+                    elif relative_day_de:
+                        days = RELATIVE_DAYS_DE.get(re.sub(r'\s+', ' ', relative_day_de))
                     if days:
                         new_date += timedelta(days=days)
                     new_date = new_date.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -237,6 +255,7 @@ class Date(object):
 
                 # !hour
                 hour = [date.get(key) for key in ('hour', 'hour_2', 'hour_3') if date.get(key)]
+                print('>>>>>>>>', hour)
                 if hour:
                     new_date = new_date.replace(hour=int(max(hour)), minute=0, second=0)
                     am = [date.get(key) for key in ('am', 'am_1') if date.get(key)]
