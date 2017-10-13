@@ -124,6 +124,19 @@ class Date(object):
 
                     new_date = Date(new_date).plus_(num, unit, sign).date
 
+                elif date.get('workday'):
+                    new_date = new_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                    num = get_num(num or 1)
+                    if context == Context.PREV or date.get('prev') or date.get('ago'):
+                        sign = -1
+                    else:
+                        sign = 1
+                    days = sign * (num + 2 * (num // 5))
+                    wkd = (now.weekday() + days) % 7
+                    if wkd in [5, 6] or sign * wkd < sign * now.weekday():
+                        days += sign * 2
+                    new_date += timedelta(days=days)
+
                 weekday = date.get('weekday')
                 relative_day = date.get('relative_day')
                 if weekday:

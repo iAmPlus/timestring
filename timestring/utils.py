@@ -15,9 +15,12 @@ def get_num(num):
         return 2
 
     try:
-        return float(num)
+        return int(num)
     except ValueError:
         try:
-            return w2n.word_to_num(num or 'one')
+            return float(num)
         except ValueError:
-            raise TimestringInvalid('Unknown number: %s' % num)
+            try:
+                return w2n.word_to_num(num or 'one')
+            except ValueError:
+                raise TimestringInvalid('Unknown number: %s' % num)

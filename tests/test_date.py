@@ -238,6 +238,40 @@ class T(unittest.TestCase):
         self.assert_date('in 45 minutes', datetime(2017, 6, 16, 20, 22, 22))
         self.assert_date('in 45 seconds', datetime(2017, 6, 16, 19, 38, 7))
 
+    def test_workday(self):
+        workday_strings = ['business day', 'workday', 'work day', 'working day', 'weekday']
+        for date_str in workday_strings:
+           self.assert_date('next ' + date_str, datetime(2017, 6, 19))
+
+        with freeze_time('2017-06-16 19:37:22'):  # Friday
+            self.assert_date('previous workday', datetime(2017, 6, 15))
+            self.assert_date('1 workdays ago', datetime(2017, 6, 15))
+            self.assert_date('2 workdays ago', datetime(2017, 6, 14))
+            self.assert_date('3 workdays ago', datetime(2017, 6, 13))
+            self.assert_date('4 workdays ago', datetime(2017, 6, 12))
+            self.assert_date('5 workdays ago', datetime(2017, 6, 9))
+            self.assert_date('6 workdays ago', datetime(2017, 6, 8))
+            self.assert_date('7 workdays ago', datetime(2017, 6, 7))
+            self.assert_date('8 workdays ago', datetime(2017, 6, 6))
+            self.assert_date('9 workdays ago', datetime(2017, 6, 5))
+            self.assert_date('10 workdays ago', datetime(2017, 6, 2))
+            self.assert_date('next workday', datetime(2017, 6, 19))
+            self.assert_date('1 workdays from now', datetime(2017, 6, 19))
+            self.assert_date('2 workdays from now', datetime(2017, 6, 20))
+            self.assert_date('3 workdays from now', datetime(2017, 6, 21))
+            self.assert_date('4 workdays from now', datetime(2017, 6, 22))
+            self.assert_date('5 workdays from now', datetime(2017, 6, 23))
+            self.assert_date('6 workdays from now', datetime(2017, 6, 26))
+            self.assert_date('7 workdays from now', datetime(2017, 6, 27))
+            self.assert_date('8 workdays from now', datetime(2017, 6, 28))
+            self.assert_date('9 workdays from now', datetime(2017, 6, 29))
+            self.assert_date('10 workdays from now', datetime(2017, 6, 30))
+
+        with freeze_time('2017-06-19 13:01:50'):  # Monday
+            self.assert_date('previous workday', datetime(2017, 6, 16))
+            self.assert_date('next workday', datetime(2017, 6, 20))
+            self.assert_date('6 workdays ago', datetime(2017, 6, 9))
+            self.assert_date('6 workdays from now', datetime(2017, 6, 27))
 
 def main():
     os.environ['TZ'] = 'UTC'

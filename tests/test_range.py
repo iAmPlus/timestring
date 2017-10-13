@@ -1287,6 +1287,20 @@ class T(unittest.TestCase):
                               datetime(2017, 6, 16, WEEKEND_START_HOUR),
                               datetime(2017, 6, 19, WEEKEND_END_HOUR),
                               week_start=0)
+    def test_workday(self):
+        workday_strings = ['business day', 'workday', 'work day', 'working day', 'weekday']
+
+        # for date_str in workday_strings:
+        #     self.assert_range('next 6 ' + date_str, datetime(2017, 6, 19))
+        #
+        # for date_str in workday_strings:
+        #     self.assert_range('previous 6 ' + date_str)
+        #
+        # for date_str in workday_strings:
+        #     self.assert_range('since 6 ' + date_str + 'ago', datetime())
+        #
+        # for date_str in workday_strings:
+        #     self.assert_range('until 6 ' + date_str + 'from now')
 
 
 def main():

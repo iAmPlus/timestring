@@ -18,7 +18,7 @@ TIMESTRING_RE = re.compile(re.sub('[\t\n\s]', '', re.sub('(\(\?\#[^\)]+\))', '',
                     (\b
                         (?P<recurrence>
                             (?P<this>this|current)
-                            |(?P<prev>last|prev(ious)|past|prior)
+                            |(?P<prev>last|prev(ious)?|past|prior)
                             |(?P<next>next|upcoming|following)
                         )
                     \s+)?
@@ -31,7 +31,8 @@ TIMESTRING_RE = re.compile(re.sub('[\t\n\s]', '', re.sub('(\(\?\#[^\)]+\))', '',
                             (\b(?P<in>in\s+))?
                             (?P<num>((\d+(\.\d+)?|couple(\s+of)?|one|two|twenty|twelve|three|thirty|thirteen|four(teen|ty)?|five|fif(teen|ty)|six(teen|ty)?|seven(teen|ty)?|eight(een|y)?|nine(teen|ty)?|ten|eleven|hundred)\s*)*)
                             (
-                                \b(?P<delta>seconds?|minutes?|hours?|days?|weekends?|weeks?|months?|quarters?|years?)
+                                \b(?P<workday>(work(ing)?|week|business)\s*days?)
+                                |\b(?P<delta>seconds?|minutes?|hours?|days?|weekends?|weeks?|months?|quarters?|years?)
                                 |((?<![a-zA-Z])(?P<delta_2>[YyQqDdHhMmSs])(?!\w))
                             )
                         )
