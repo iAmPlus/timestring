@@ -14,13 +14,13 @@ from timestring import Date, TimestringInvalid
 class T(unittest.TestCase):
     def assert_date(self, date_str, expected: datetime, **kw):
         _date = Date(date_str, **kw)
-
+        now = datetime.now()
         self.assertEqual(_date,
                          expected,
-                         '\n     Now: %s' % str(datetime.now())
-                         + '\n    Text: %s' % date_str
-                         + '\nExpected: %s' % str(expected)
-                         + '\n  Actual: %s' % str(_date))
+                         '\n     Now: %s (%s)' % (now, now.strftime('%a'))
+                         + '\n    Text: "%s"' % date_str
+                         + '\nExpected: %s (%s)' % (expected, expected.strftime('%a'))
+                         + '\n  Actual: %s (%s)' % (_date, _date.date.strftime('%a')))
 
     def test_date_formats(self):
         for date_str in [
