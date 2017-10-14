@@ -131,10 +131,13 @@ class Date(object):
                         sign = -1
                     else:
                         sign = 1
-                    days = sign * (num + 2 * (num // 5))
-                    wkd = (now.weekday() + days) % 7
-                    if wkd in [5, 6] or sign * wkd < sign * now.weekday():
-                        days += sign * 2
+                    wd = new_date.weekday()
+                    days = 0
+                    i = 0
+                    while i < num:
+                        days += sign
+                        if (wd + days) % 7 not in [5, 6]:
+                            i += 1
                     new_date += timedelta(days=days)
 
                 weekday = date.get('weekday')
