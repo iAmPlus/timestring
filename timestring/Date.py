@@ -113,32 +113,24 @@ class Date(object):
                     new_date = datetime.fromtimestamp(int(date.get('unixtime')))
 
                 # Number of (days|...) [ago]
-                elif num and unit:
+                elif unit:
                     unit = unit.lower()
                     if date.get('ago') or context == Context.PREV or date.get('prev'):
                         sign = -1
-                    elif date.get('in') or date.get('from_now') or context == Context.NEXT or date.get('next'):
-                        sign = 1
-                    else:
-                        raise TimestringInvalid('Missing relationship such as "ago" or "from now"')
-
-                    new_date = Date(new_date).plus_(num, unit, sign).date
-
-                elif date.get('workday'):
-                    new_date = new_date.replace(hour=0, minute=0, second=0, microsecond=0)
-                    num = get_num(num or 1)
-                    if context == Context.PREV or date.get('prev') or date.get('ago'):
-                        sign = -1
                     else:
                         sign = 1
-                    wd = new_date.weekday()
-                    days = 0
-                    i = 0
-                    while i < num:
-                        days += sign
-                        if (wd + days) % 7 not in [5, 6]:
-                            i += 1
-                    new_date += timedelta(days=days)
+                    if date.get('workday'):
+                        num = get_num(num or 1)
+                        wd = new_date.weekday()
+                        days = 0
+                        i = 0
+                        while i < num:
+                            days += sign
+                            if (wd + days) % 7 not in [5, 6]:
+                                i += 1
+                        new_date += timedelta(days=days)
+                    elif num:
+                        new_date = Date(new_date).plus_(num, unit, sign).date
 
                 weekday = date.get('weekday')
                 relative_day = date.get('relative_day')
