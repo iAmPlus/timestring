@@ -2,6 +2,8 @@ import re
 
 MONTH_NAMES = r'''\b(january|february|march|april|june|july|august|september|october|november|december''' \
               r'''|jan|feb|mar|apr|may|jun|jul|aug|sept?|oct|nov|dec)\b'''
+WORKDAY = r'''(work(ing)?|week|business)\s*days?'''
+WORKDAY_RE = re.compile(WORKDAY)
 
 TIMESTRING_RE = re.compile(re.sub('[\t\n\s]', '', re.sub('(\(\?\#[^\)]+\))', '', r'''
     (
@@ -31,7 +33,7 @@ TIMESTRING_RE = re.compile(re.sub('[\t\n\s]', '', re.sub('(\(\?\#[^\)]+\))', '',
                             (\b(?P<in>in\s+))?
                             (?P<num>((\d+(\.\d+)?|couple(\s+of)?|one|two|twenty|twelve|three|thirty|thirteen|four(teen|ty)?|five|fif(teen|ty)|six(teen|ty)?|seven(teen|ty)?|eight(een|y)?|nine(teen|ty)?|ten|eleven|hundred)\s*)*)
                             (
-                                \b(?P<delta>(?P<workday>(work(ing)?|week|business)\s*days?)|seconds?|minutes?|hours?|days?|weekends?|weeks?|months?|quarters?|years?)
+                                \b(?P<delta>(?P<workday>''' + WORKDAY + r''')|seconds?|minutes?|hours?|days?|weekends?|weeks?|months?|quarters?|years?)
                                 |((?<![a-zA-Z])(?P<delta_2>[YyQqDdHhMmSs])(?!\w))
                             )
                         )

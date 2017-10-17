@@ -6,10 +6,9 @@ from datetime import datetime, timedelta
 from ddt import ddt
 from freezegun import freeze_time
 
-from timestring import Context, TimestringInvalid
 from timestring.Date import Date
 from timestring.Range import Range
-from timestring import Context, WEEKEND_START_HOUR, WEEKEND_END_HOUR
+from timestring import Context, TimestringInvalid, WEEKEND_START_HOUR, WEEKEND_END_HOUR
 
 
 @freeze_time('2017-06-16 19:37:22')
@@ -21,7 +20,7 @@ class T(unittest.TestCase):
                      end_tolerance: timedelta = timedelta(),
                      **kw):
         start, end = Range(range_str, **kw)
-
+        now = datetime.now()
         min_start = expected_start - start_tolerance
         max_start = expected_start + start_tolerance
         min_end = expected_end - end_tolerance
@@ -29,17 +28,17 @@ class T(unittest.TestCase):
 
         self.assertTrue(
             min_start <= start <= max_start,
-            '\n         Now: %s' % datetime.now()
+            '\n         Now: %s (%s)' % (now, now.strftime('%a'))
             + '\n          Text: "%s"' % range_str
-            + '\nExpected start: %s += %s' % (expected_start, start_tolerance)
-            + '\n  Actual start: %s' % start
+            + '\nExpected start: %s (%s) += %s' % (expected_start, expected_start.strftime('%a'), start_tolerance)
+            + '\n  Actual start: %s (%s)' % (start, start.date.strftime('%a'))
         )
         self.assertTrue(
             min_end <= end <= max_end,
-            '\n         Now: %s' % datetime.now()
+            '\n         Now: %s (%s)' % (now, now.strftime('%a'))
             + '\n        Text: "%s"' % range_str
-            + '\nExpected end: %s += %s' % (expected_end, end_tolerance)
-            + '\n  Actual end: %s' % end
+            + '\nExpected end: %s (%s) += %s' % (expected_end, expected_end.strftime('%a'), end_tolerance)
+            + '\n  Actual end: %s (%s)' % (end, end.date.strftime('%a'))
         )
         if start_tolerance and end_tolerance:
             self.assertEqual(expected_end - expected_start, end.date - start.date)
@@ -1288,19 +1287,87 @@ class T(unittest.TestCase):
                               datetime(2017, 6, 19, WEEKEND_END_HOUR),
                               week_start=0)
     def test_workday(self):
-        workday_strings = ['business day', 'workday', 'work day', 'working day', 'weekday']
+        with freeze_time('2017-06-16 13:40:26'):  # Friday
+            self.assert_range('this workday', datetime(2017, 6, 16), datetime(2017, 6, 17))
+            self.assert_range('previous workday', datetime(2017, 6, 15), datetime(2017, 6, 16))
+            self.assert_range('previous 2 workdays', datetime(2017, 6, 14), datetime(2017, 6, 16))
+            self.assert_range('previous 3 workdays', datetime(2017, 6, 13), datetime(2017, 6, 16))
+            self.assert_range('previous 4 workdays', datetime(2017, 6, 12), datetime(2017, 6, 16))
+            self.assert_range('previous 5 workdays', datetime(2017, 6, 9), datetime(2017, 6, 16))
+            self.assert_range('previous 6 workdays', datetime(2017, 6, 8), datetime(2017, 6, 16))
+            self.assert_range('1 workdays ago', datetime(2017, 6, 15), datetime(2017, 6, 16))
+            self.assert_range('2 workdays ago', datetime(2017, 6, 14), datetime(2017, 6, 15))
+            self.assert_range('3 workdays ago', datetime(2017, 6, 13), datetime(2017, 6, 14))
+            self.assert_range('4 workdays ago', datetime(2017, 6, 12), datetime(2017, 6, 13))
+            self.assert_range('5 workdays ago', datetime(2017, 6, 9), datetime(2017, 6, 10))
+            self.assert_range('6 workdays ago', datetime(2017, 6, 8), datetime(2017, 6, 9))
+            self.assert_range('next workday', datetime(2017, 6, 19), datetime(2017, 6, 20))
+            self.assert_range('next 2 workdays', datetime(2017, 6, 19), datetime(2017, 6, 21))
+            self.assert_range('next 3 workdays', datetime(2017, 6, 19), datetime(2017, 6, 22))
+            self.assert_range('next 4 workdays', datetime(2017, 6, 19), datetime(2017, 6, 23))
+            self.assert_range('next 5 workdays', datetime(2017, 6, 19), datetime(2017, 6, 24))
+            self.assert_range('next 6 workdays', datetime(2017, 6, 19), datetime(2017, 6, 27))
+            self.assert_range('1 workdays from now', datetime(2017, 6, 19), datetime(2017, 6, 20))
+            self.assert_range('2 workdays from now', datetime(2017, 6, 20), datetime(2017, 6, 21))
+            self.assert_range('3 workdays from now', datetime(2017, 6, 21), datetime(2017, 6, 22))
+            self.assert_range('4 workdays from now', datetime(2017, 6, 22), datetime(2017, 6, 23))
+            self.assert_range('5 workdays from now', datetime(2017, 6, 23), datetime(2017, 6, 24))
+            self.assert_range('6 workdays from now', datetime(2017, 6, 26), datetime(2017, 6, 27))
 
-        # for date_str in workday_strings:
-        #     self.assert_range('next 6 ' + date_str, datetime(2017, 6, 19))
-        #
-        # for date_str in workday_strings:
-        #     self.assert_range('previous 6 ' + date_str)
-        #
-        # for date_str in workday_strings:
-        #     self.assert_range('since 6 ' + date_str + 'ago', datetime())
-        #
-        # for date_str in workday_strings:
-        #     self.assert_range('until 6 ' + date_str + 'from now')
+        for dt_str in ('2017-06-17 11:05:21', '2017-06-18 11:05:21'):
+            with freeze_time(dt_str):  # Saturday, Sunday
+                #self.assert_range('this workday', datetime(2017, 6, 15), datetime(2017, 6, 16))
+                self.assert_range('previous workday', datetime(2017, 6, 16), datetime(2017, 6, 17))
+                self.assert_range('previous 2 workdays', datetime(2017, 6, 15), datetime(2017, 6, 17))
+                self.assert_range('previous 3 workdays', datetime(2017, 6, 14), datetime(2017, 6, 17))
+                self.assert_range('previous 4 workdays', datetime(2017, 6, 13), datetime(2017, 6, 17))
+                self.assert_range('previous 5 workdays', datetime(2017, 6, 12), datetime(2017, 6, 17))
+                self.assert_range('previous 6 workdays', datetime(2017, 6, 9), datetime(2017, 6, 17))
+                self.assert_range('1 workdays ago', datetime(2017, 6, 16), datetime(2017, 6, 17))
+                self.assert_range('2 workdays ago', datetime(2017, 6, 15), datetime(2017, 6, 16))
+                self.assert_range('3 workdays ago', datetime(2017, 6, 14), datetime(2017, 6, 15))
+                self.assert_range('4 workdays ago', datetime(2017, 6, 13), datetime(2017, 6, 14))
+                self.assert_range('5 workdays ago', datetime(2017, 6, 12), datetime(2017, 6, 13))
+                self.assert_range('6 workdays ago', datetime(2017, 6, 9), datetime(2017, 6, 10))
+                self.assert_range('next workday', datetime(2017, 6, 19), datetime(2017, 6, 20))
+                self.assert_range('next 2 workdays', datetime(2017, 6, 19), datetime(2017, 6, 21))
+                self.assert_range('next 3 workdays', datetime(2017, 6, 19), datetime(2017, 6, 22))
+                self.assert_range('next 4 workdays', datetime(2017, 6, 19), datetime(2017, 6, 23))
+                self.assert_range('next 5 workdays', datetime(2017, 6, 19), datetime(2017, 6, 24))
+                self.assert_range('next 6 workdays', datetime(2017, 6, 19), datetime(2017, 6, 27))
+                self.assert_range('1 workdays from now', datetime(2017, 6, 19), datetime(2017, 6, 20))
+                self.assert_range('2 workdays from now', datetime(2017, 6, 20), datetime(2017, 6, 21))
+                self.assert_range('3 workdays from now', datetime(2017, 6, 21), datetime(2017, 6, 22))
+                self.assert_range('4 workdays from now', datetime(2017, 6, 22), datetime(2017, 6, 23))
+                self.assert_range('5 workdays from now', datetime(2017, 6, 23), datetime(2017, 6, 24))
+                self.assert_range('6 workdays from now', datetime(2017, 6, 26), datetime(2017, 6, 27))
+
+        with freeze_time('2017-06-19 13:01:50'):  # Monday
+            self.assert_range('this workday', datetime(2017, 6, 19), datetime(2017, 6, 20))
+            self.assert_range('previous workday', datetime(2017, 6, 16), datetime(2017, 6, 17))
+            self.assert_range('previous 2 workdays', datetime(2017, 6, 15), datetime(2017, 6, 17))
+            self.assert_range('previous 3 workdays', datetime(2017, 6, 14), datetime(2017, 6, 17))
+            self.assert_range('previous 4 workdays', datetime(2017, 6, 13), datetime(2017, 6, 17))
+            self.assert_range('previous 5 workdays', datetime(2017, 6, 12), datetime(2017, 6, 17))
+            self.assert_range('previous 6 workdays', datetime(2017, 6, 9), datetime(2017, 6, 17))
+            self.assert_range('1 workdays ago', datetime(2017, 6, 16), datetime(2017, 6, 17))
+            self.assert_range('2 workdays ago', datetime(2017, 6, 15), datetime(2017, 6, 16))
+            self.assert_range('3 workdays ago', datetime(2017, 6, 14), datetime(2017, 6, 15))
+            self.assert_range('4 workdays ago', datetime(2017, 6, 13), datetime(2017, 6, 14))
+            self.assert_range('5 workdays ago', datetime(2017, 6, 12), datetime(2017, 6, 13))
+            self.assert_range('6 workdays ago', datetime(2017, 6, 9), datetime(2017, 6, 10))
+            self.assert_range('next workday', datetime(2017, 6, 20), datetime(2017, 6, 21))
+            self.assert_range('next 2 workdays', datetime(2017, 6, 20), datetime(2017, 6, 22))
+            self.assert_range('next 3 workdays', datetime(2017, 6, 20), datetime(2017, 6, 23))
+            self.assert_range('next 4 workdays', datetime(2017, 6, 20), datetime(2017, 6, 24))
+            self.assert_range('next 5 workdays', datetime(2017, 6, 20), datetime(2017, 6, 27))
+            self.assert_range('next 6 workdays', datetime(2017, 6, 20), datetime(2017, 6, 28))
+            self.assert_range('1 workdays from now', datetime(2017, 6, 20), datetime(2017, 6, 21))
+            self.assert_range('2 workdays from now', datetime(2017, 6, 21), datetime(2017, 6, 22))
+            self.assert_range('3 workdays from now', datetime(2017, 6, 22), datetime(2017, 6, 23))
+            self.assert_range('4 workdays from now', datetime(2017, 6, 23), datetime(2017, 6, 24))
+            self.assert_range('5 workdays from now', datetime(2017, 6, 26), datetime(2017, 6, 27))
+            self.assert_range('6 workdays from now', datetime(2017, 6, 27), datetime(2017, 6, 28))
 
 
 def main():

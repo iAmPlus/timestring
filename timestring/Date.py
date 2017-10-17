@@ -7,7 +7,7 @@ from typing import Union
 import pytz
 
 from timestring import TimestringInvalid, Context
-from .timestring_re import TIMESTRING_RE
+from .timestring_re import TIMESTRING_RE, WORKDAY_RE
 from .utils import get_num
 
 try:
@@ -117,18 +117,13 @@ class Date(object):
                     unit = unit.lower()
                     if date.get('ago') or context == Context.PREV or date.get('prev'):
                         sign = -1
-                    else:
+                    elif date.get('from_now') or date.get('next') or date.get('in') or context == Context.NEXT:
                         sign = 1
+                    else:
+                        sign = 0
                     if date.get('workday'):
                         num = get_num(num or 1)
-                        wd = new_date.weekday()
-                        days = 0
-                        i = 0
-                        while i < num:
-                            days += sign
-                            if (wd + days) % 7 not in [5, 6]:
-                                i += 1
-                        new_date += timedelta(days=days)
+                        new_date = self._plus_workdays(new_date, num, sign)
                     elif num:
                         new_date = Date(new_date).plus_(num, unit, sign).date
 
@@ -384,7 +379,8 @@ class Date(object):
             else:
                 pass
             new_date += timedelta(days=91 * n)
-
+        elif re.search(WORKDAY_RE, unit):
+            new_date = self._plus_workdays(new_date, mag, sign)
         else:
             _unit = TIMEDELTA_UNITS.get(unit[0])
             if _unit:
@@ -420,6 +416,16 @@ class Date(object):
 
         raise TimestringInvalid('Invalid type for plus(): %s'
                                 % (type(duration)))
+
+    @staticmethod
+    def _plus_workdays(date, num, sign):
+        wd = date.weekday()
+        days = 0
+        while num and sign:
+            days += sign
+            if (wd + days) % 7 not in [5, 6]:
+                num -= 1
+        return date + timedelta(days=days)
 
     def __nonzero__(self):
         return True

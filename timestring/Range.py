@@ -24,6 +24,11 @@ POSTGRES_RANGE_RE = re.compile(
 )
 
 
+def get_duration_str(unit_str):
+    if unit_str.endswith('day') or unit_str.endswith('days'):
+        return 'day'
+    return unit_str
+
 class Range(object):
     def __init__(self, start: Union[int, str, long, float, datetime, Date],
                  end: Union[datetime, Date] = None, offset: dict = None,
@@ -128,10 +133,11 @@ class Range(object):
                             end = start + '1 second'
 
                     # "next 2 weeks", "the next hour"   x[     ][     ]
-                    elif group['next'] and (group['num'] or group['article']):
+                    elif group['next'] and (num or group['article']) \
+                            and not group['workday']:
                         if verbose:
                             print('next and (num or article)')
-                        end = start.plus_(num, delta)
+                        end = start.plus_(num, get_duration_str(delta))
 
                     # "next week"                       (  x  )[      ]
                     elif group['next'] or (not group['this'] and context == Context.NEXT):
@@ -147,15 +153,17 @@ class Range(object):
                             else:
                                 start, end = this
                         else:
-                            start = this.end
+                            start = this.start.plus_(1, delta)
                             end = start.plus_(num, delta)
+                            if group['workday'] and end.weekday == 0:
+                                end = end.plus_(1, delta, -1).plus_(1, 'day')
 
                     # "last 2 weeks", "the last hour"   [     ][     ]x
-                    elif group['prev'] and (group['num'] or group['article']):
+                    elif group['prev'] and (num or group['article']) \
+                            and not group['workday']:
                         if verbose:
                             print('prev and (num or article)')
-
-                        end = start.plus_(num, delta, -1)
+                        end = start.plus_(num, get_duration_str(delta), -1)
 
                     # "last week"                       [     ](  x  )
                     elif group['prev']:
@@ -165,16 +173,17 @@ class Range(object):
                                      offset=offset,
                                      tz=tz,
                                      week_start=week_start)
-
                         start = this.start.plus_(num, delta, -1)
-                        end = this.end.plus_(num, delta, -1)
+                        end = start.plus_(num, delta)
+                        if group['workday'] and end.weekday == 0:
+                            end = end.plus_(1, delta, -1).plus_(1, 'day')
 
                     # "1 year", "10 days" till now
                     elif num:
                         if verbose:
                             print('num')
 
-                        end = start.plus_(num, delta, -1)
+                        end = start.plus_(num, get_duration_str(delta), -1)
 
                     # this                             [   x  ]
                     elif group['this'] or not group['recurrence']:
@@ -184,11 +193,8 @@ class Range(object):
 
                         if delta.startswith('y'):
                             start = start.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-
                         elif delta.startswith('mo'):
                             start = start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
-                        # weekend
                         elif delta.startswith('weekend'):
                             days = (WEEKEND_START_DAY - start.isoweekday + 7) % 7
                             start = Date(now + timedelta(days=days))
@@ -201,31 +207,24 @@ class Range(object):
                             end = end.replace(hour=WEEKEND_END_HOUR)
                             start = start.replace(**offset or {})
                             end = end.replace(**offset or {})
-
-                        # week
+                        elif delta.startswith('d') or group['workday']:
+                            start = start.replace(hour=0, minute=0, second=0, microsecond=0)
                         elif delta.startswith('w'):
                             start.date -= timedelta(days=start.isoweekday - week_start % 7)
                             start = start.replace(hour=0, minute=0, second=0, microsecond=0)
-
-                        elif delta.startswith('d'):
-                            start = start.replace(hour=0, minute=0, second=0, microsecond=0)
-
                         elif delta.startswith('h'):
                             start = start.replace(minute=0, second=0, microsecond=0)
-
                         elif delta.startswith('m'):
                             start = start.replace(second=0, microsecond=0)
-
                         elif delta.startswith('s'):
                             start = start.replace(microsecond=0)
-
                         else:
                             raise TimestringInvalid("Not a valid time reference")
 
                         if offset:
                             start = start.replace(**offset)
                         if not end:
-                            end = start.plus_(num, delta)
+                            end = start.plus_(num, get_duration_str(delta))
 
                 elif group['relative_day'] or group['weekday']:
                     if verbose:
@@ -282,16 +281,16 @@ class Range(object):
                         end = start
 
                 if group['since']:
-                    end = now
+                    end = Date(now)
                 elif group['until'] or group['by']:
                     end = start
-                    start = now
+                    start = Date(now)
 
                 if start <= now <= end:
                     if context == Context.PAST:
-                        end = now
+                        end = Date(now)
                     elif context == Context.FUTURE:
-                        start = now
+                        start = Date(now)
 
             else:
                 raise TimestringInvalid('Invalid range: %s' % start)
@@ -325,12 +324,12 @@ class Range(object):
         return self.format()
 
     def __nonzero__(self):
-        # Ranges are natuarally always true in statments link: if Range
         return True
 
-    def format(self, format_string='%x %X'):
-        return "From %s to %s" % (self[0].format(format_string) if isinstance(self[0], Date) else str(self[0]),
-                                  self[1].format(format_string) if isinstance(self[1], Date) else str(self[1]))
+    def format(self, format_string='%Y-%m-%d %X'):
+        def fmt(o):
+            return o.format(format_string) if isinstance(o, Date) else str(o)
+        return 'From %s to %s' % (fmt(self[0]), fmt(self[1]))
 
     @property
     def start(self):
