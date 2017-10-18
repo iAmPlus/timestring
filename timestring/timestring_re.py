@@ -2,7 +2,7 @@ import re
 
 MONTH_NAMES = r'''\b(january|february|march|april|june|july|august|september|october|november|december''' \
               r'''|jan|feb|mar|apr|may|jun|jul|aug|sept?|oct|nov|dec)\b'''
-WORKDAY = r'''(work(ing)?|week|business)\s*days?'''
+WORKDAY = r'''(work(ing)?|week|business|school)\s*days?'''
 WORKDAY_RE = re.compile(WORKDAY)
 
 TIMESTRING_RE = re.compile(re.sub('[\t\n\s]', '', re.sub('(\(\?\#[^\)]+\))', '', r'''
