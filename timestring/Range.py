@@ -174,9 +174,12 @@ class Range(object):
                                      tz=tz,
                                      week_start=week_start)
                         start = this.start.plus_(num, delta, -1)
-                        end = start.plus_(num, delta)
-                        if group['workday'] and end.weekday == 0:
-                            end = end.plus_(1, delta, -1).plus_(1, 'day')
+                        if group['workday']:
+                            end = start.plus_(num, delta)
+                            if (end.weekday, end.hour, end.minute, end.second) == (0, 0, 0, 0):
+                                end = end.plus_(1, delta, -1).plus_(1, 'day')
+                        else:
+                            end = this.end.plus_(num, delta, -1)
 
                     # "1 year", "10 days" till now
                     elif num:
