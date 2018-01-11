@@ -63,11 +63,6 @@ class T(unittest.TestCase):
 
         # TODO: 13/5/2012
 
-    def test_timestamp(self):
-        start, end = Range(1374681560)
-        self.assertEqual(start.day, 24)
-        self.assertEqual(end.day, 24)
-
     def test_exceptions(self):
         for date_str in ['yestserday', 'Satruday', Exception]:
             with self.assertRaises(TimestringInvalid):

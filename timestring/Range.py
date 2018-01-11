@@ -50,13 +50,6 @@ class Range(object):
         elif start == 'infinity':
             self._dates = (Date('infinity'), Date('infinity'))
 
-        elif isinstance(start, (int, long, float)) \
-                    or (isinstance(start, (str, unicode)) and start.isdigit()) \
-                and len(str(int(float(start)))) > 4:
-            start = Date(start)
-            end = start + '1 second'
-            self._dates = start, end
-
         elif re.search(r'(\s(and|to)\s)', start):
             # Both sides are provided in string "start"
             start = re.sub('^(between|from)\s', '', start.lower())

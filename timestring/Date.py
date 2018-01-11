@@ -73,11 +73,6 @@ class Date(object):
         elif isinstance(date, datetime):
             self.date = date
 
-        elif isinstance(date, (int, long, float)) \
-                    or (isinstance(date, (str, unicode)) and date.isdigit()) \
-                and len(str(int(float(date)))) > 4:
-            self.date = datetime.fromtimestamp(int(date))
-
         elif date == 'now' or date is None:
             self.date = now
 

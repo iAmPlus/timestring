@@ -76,11 +76,6 @@ class T(unittest.TestCase):
         # Offset timezone
         self.assertEqual(Date('2014-03-06 15:33:43.764419-05').hour, 20)
 
-    def test_timestamp(self):
-        ts = 1374681560
-        for param in ts, str(ts):
-            self.assert_date(param, datetime(2013, 7, 24, 8, 59, 20, 0))
-
     def test_exceptions(self):
         for x in ['yestserday', 'Satruday', Exception]:
             with self.assertRaises(TimestringInvalid):
