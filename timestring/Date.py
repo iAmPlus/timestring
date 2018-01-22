@@ -55,9 +55,27 @@ TIMEDELTA_UNITS = dict(
 )
 
 
+class Specified:
+    def __init__(self, year, month, day, hour, minute, second, microsecond):
+        self.year = year
+        self.month = month
+        self.day = day
+        self.hour = hour
+        self.minute = minute
+        self.second = second
+        self.microsecond = microsecond
+
+    def is_date(self):
+        return self.year and self.month and self.day
+
+    def is_time(self):
+        return self.hour and self.minute and self.second
+
+
 class Date(object):
     def __init__(self, date=None, offset: dict = None, tz: str = None,
                  now: datetime = None, verbose=False, context=None):
+        self._specified = Specified(0, 0, 0, 0, 0, 0, 0)
         self._original = date
         if tz:
             tz = pytz.timezone(str(tz))
@@ -106,6 +124,7 @@ class Date(object):
 
                 if date.get('unixtime'):
                     new_date = datetime.fromtimestamp(int(date.get('unixtime')))
+                    self._specified = Specified(1, 1, 1, 1, 1, 1, 1)
 
                 # Number of (days|...) [ago]
                 elif num and unit:
@@ -117,7 +136,9 @@ class Date(object):
                     else:
                         raise TimestringInvalid('Missing relationship such as "ago" or "from now"')
 
-                    new_date = Date(new_date).plus_(num, unit, sign).date
+                    temp = Date(new_date).plus_(num, unit, sign)
+                    new_date = temp.date
+                    self._specified = temp.specified
 
                 weekday = date.get('weekday')
                 relative_day = date.get('relative_day')
@@ -133,13 +154,15 @@ class Date(object):
                             if iso <= new_date.isoweekday():
                                 days += 7
                         new_date += timedelta(days=days)
+                        self._specified = Specified(1, 1, 1, 0, 0, 0, 0)
                 elif relative_day:
                     days = RELATIVE_DAYS.get(re.sub(r'\s+', ' ', relative_day))
                     if days:
                         new_date += timedelta(days=days)
                     new_date = new_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                    self._specified = Specified(1, 1, 1, 0, 0, 0, 0)
 
-                # !year
+                # Year
                 year = [int(CLEAN_NUMBER.sub('', date[key])) for key in ('year', 'year_2', 'year_3', 'year_4', 'year_5', 'year_6') if date.get(key)]
                 if year:
                     if date.get('recurrence'):
@@ -148,8 +171,9 @@ class Date(object):
                     if len(str(year)) != 4:
                         year += 2000 if year <= 40 else 1900
                     new_date = new_date.replace(year=year)
+                    self._specified.year = True
 
-                # !month
+                # Month
                 month = [date.get(key) for key in ('month', 'month_1', 'month_2', 'month_3', 'month_4', 'month_5') if date.get(key)]
                 if month:
                     month_ = max(month)
@@ -161,6 +185,7 @@ class Date(object):
                         month_ord = MONTH_ORDINALS.get(month_, new_date.month)
 
                     new_date = new_date.replace(month=int(month_ord))
+                    self._specified.month = True
 
                     if year == []:
                         if date.get('next') or context == Context.NEXT:
@@ -172,14 +197,15 @@ class Date(object):
                         elif month_ord < now.month and not year:
                             new_date = new_date.replace(year=new_date.year + 1)
 
-                # !day
+                # Day
                 day = [date.get(key) for key in ('date', 'date_2', 'date_3', 'date_4') if date.get(key)]
                 if day:
                     if date.get('recurrence'):
                         TimestringInvalid('"next" %s'% day)
                     new_date = new_date.replace(day=int(max(day)))
+                    self._specified.day = True
 
-                # !daytime
+                # Daytime
                 daytime = date.get('daytime')
                 if daytime:
                     if 'this time' not in daytime:
@@ -190,8 +216,9 @@ class Date(object):
                                                     microsecond=0)
                     # No offset because the hour was set.
                     offset = False
+                    self._specified.hour = True
 
-                # !hour
+                # Hour
                 hour = [date.get(key) for key in ('hour', 'hour_2', 'hour_3') if date.get(key)]
                 if hour:
                     new_date = new_date.replace(hour=int(max(hour)), minute=0, second=0)
@@ -202,14 +229,17 @@ class Date(object):
                             new_date = new_date.replace(hour=h+12)
                     # No offset because the hour was set.
                     offset = False
+                    self._specified.hour = True
 
                     minute = [date.get(key) for key in ('minute', 'minute_2') if date.get(key)]
                     if minute:
                         new_date = new_date.replace(minute=int(max(minute)))
+                        self._specified.minute = True
 
                     seconds = date.get('seconds', 0)
                     if seconds:
                         new_date = new_date.replace(second=int(seconds))
+                        self._specified.second = True
 
                     new_date = new_date.replace(microsecond=0)
 
@@ -533,3 +563,6 @@ class Date(object):
             return time.mktime(self.date.timetuple())
         else:
             return -1
+
+    def specified(self):
+        return self._specified
