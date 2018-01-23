@@ -154,13 +154,13 @@ class Date(object):
                             if iso <= new_date.isoweekday():
                                 days += 7
                         new_date += timedelta(days=days)
-                        self._specified = Specified(1, 1, 1, 0, 0, 0, 0)
+                        self._specified.day = True  # TODO more fine-grained
                 elif relative_day:
                     days = RELATIVE_DAYS.get(re.sub(r'\s+', ' ', relative_day))
                     if days:
                         new_date += timedelta(days=days)
                     new_date = new_date.replace(hour=0, minute=0, second=0, microsecond=0)
-                    self._specified = Specified(1, 1, 1, 0, 0, 0, 0)
+                    self._specified.day = True
 
                 # Year
                 year = [int(CLEAN_NUMBER.sub('', date[key])) for key in ('year', 'year_2', 'year_3', 'year_4', 'year_5', 'year_6') if date.get(key)]
@@ -216,7 +216,7 @@ class Date(object):
                                                     microsecond=0)
                     # No offset because the hour was set.
                     offset = False
-                    self._specified.hour = True
+                    self._specified.hour = True  # TODO am/pm
 
                 # Hour
                 hour = [date.get(key) for key in ('hour', 'hour_2', 'hour_3') if date.get(key)]
