@@ -66,6 +66,23 @@ class Specified:
         self.second = second
         self.microsecond = microsecond
 
+    @property
+    def tuple(self):
+        return (int(self.year),
+                int(self.month),
+                int(self.day),
+                int(self.daytime),
+                int(self.hour),
+                int(self.minute),
+                int(self.second),
+                int(self.microsecond))
+
+    def __eq__(self, other):
+        return isinstance(other, Specified) and self.tuple == other.tuple
+
+    def __repr__(self):
+        return str(self.tuple)
+
 
 class Date(object):
     def __init__(self, date=None, offset: dict = None, tz: str = None,
@@ -82,18 +99,22 @@ class Date(object):
 
         if isinstance(date, Date):
             self.date = copy(date.date)
+            self._specified = date.specified
 
         elif isinstance(date, datetime):
             self.date = date
+            self._specified = Specified(1, 1, 1, 1, 1, 1, 1, 1)
 
         elif date == 'now' or date is None:
             self.date = now
+            self._specified = Specified(1, 1, 1, 1, 1, 1, 1, 1)
 
         elif date == 'infinity':
             self.date = 'infinity'
 
         elif isinstance(date, (str, unicode)) and re.match(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+-\d{2}", date):
             self.date = datetime.strptime(date[:-3], "%Y-%m-%d %H:%M:%S.%f") - timedelta(hours=int(date[-3:]))
+            self._specified = Specified(1, 1, 1, 1, 1, 1, 1, 1)
 
         elif isinstance(date, (str, unicode, dict)):
             if type(date) in (str, unicode):
@@ -215,9 +236,10 @@ class Date(object):
 
                 # Hour
                 hour = [date.get(key) for key in ('hour', 'hour_2', 'hour_3') if date.get(key)]
+
                 if hour:
                     new_date = new_date.replace(hour=int(max(hour)), minute=0, second=0)
-                    am_pm = [date.get(key) for key in ('am', 'am_1') if date.get(key)]
+                    am_pm = [date.get(key) for key in ('am', 'am_1', 'am_2') if date.get(key)]
                     if am_pm:
                         self._specified.daytime = True
                         if max(am_pm) in ('p', 'pm'):
@@ -227,6 +249,8 @@ class Date(object):
                     # No offset because the hour was set.
                     offset = False
                     self._specified.hour = True
+                    if new_date.hour >= 12:
+                        self._specified.daytime = True
 
                     minute = [date.get(key) for key in ('minute', 'minute_2') if date.get(key)]
                     if minute:
@@ -406,7 +430,9 @@ class Date(object):
             else:
                 raise TimestringInvalid('Unknown time unit: ' + unit)
 
-        return Date(new_date)
+        result = Date(new_date)
+        result._specified = self._specified
+        return result
 
     def plus(self, duration: Union[str, int, float, timedelta]):
         """
@@ -561,5 +587,6 @@ class Date(object):
         else:
             return -1
 
+    @property
     def specified(self):
         return self._specified

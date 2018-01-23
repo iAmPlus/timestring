@@ -7,20 +7,24 @@ from ddt import ddt
 from freezegun import freeze_time
 
 from timestring import Date, TimestringInvalid
+from timestring.Date import Specified, DAYTIMES
 
 
 @freeze_time('2017-06-16 19:37:22')
 @ddt
 class T(unittest.TestCase):
-    def assert_date(self, date_str, expected: datetime, **kw):
+    def assert_date(self, date_str, expected_dt: datetime,
+                    expected_specified=None, **kw):
         _date = Date(date_str, **kw)
 
         self.assertEqual(_date,
-                         expected,
+                         expected_dt,
                          '\n     Now: %s' % str(datetime.now())
                          + '\n    Text: %s' % date_str
-                         + '\nExpected: %s' % str(expected)
+                         + '\nExpected: %s' % str(expected_dt)
                          + '\n  Actual: %s' % str(_date))
+        if expected_specified is not None:
+            self.assertEqual(_date.specified, expected_specified)
 
     def test_date_formats(self):
         for date_str in [
@@ -37,17 +41,27 @@ class T(unittest.TestCase):
             '09/05/2012',
             '5th of September, 2012',
         ]:
-            self.assert_date(date_str, datetime(2012, 9, 5))
+            self.assert_date(date_str, datetime(2012, 9, 5),
+                             Specified(1, 1, 1, 0, 0, 0, 0, 0))
 
-        self.assert_date('2012', datetime(2012, 1, 1))
-        self.assert_date('January 2013', datetime(2013, 1, 1))
-        self.assert_date('feb 2011', datetime(2011, 2, 1))
-        self.assert_date('today', datetime(2017, 6, 16))
+        self.assert_date('2012', datetime(2012, 1, 1),
+                         Specified(1, 0, 0, 0, 0, 0, 0, 0))
+        self.assert_date('January 2013', datetime(2013, 1, 1),
+                         Specified(1, 1, 0, 0, 0, 0, 0, 0))
+        self.assert_date('feb 2011', datetime(2011, 2, 1),
+                         Specified(1, 1, 0, 0, 0, 0, 0, 0))
+        self.assert_date('today', datetime(2017, 6, 16),
+                         Specified(0, 0, 1, 0, 0, 0, 0, 0))
         # TODO: 13/5/2012
 
     def test_time_formats(self):
-        for time_str in ['11am', '11 AM', '11a', "11 o'clock", '11 oclock',]:
-            self.assert_date(time_str, datetime(2017, 6, 17, 11, 0, 0))
+        expected_datetime = datetime(2017, 6, 17, 11, 0, 0)
+        for time_str in ['11am', '11 AM', '11a',]:
+            self.assert_date(time_str, expected_datetime,
+                             Specified(0, 0, 0, 1, 1, 0, 0, 0))
+        for time_str in ["11 o'clock", '11 oclock',]:
+            self.assert_date(time_str, expected_datetime,
+                             Specified(0, 0, 0, 0, 1, 0, 0, 0))
             # TODO: at 11
             # TODO: eleven o'clock
             # TODO: 1100 hours
@@ -56,7 +70,8 @@ class T(unittest.TestCase):
         for date_str in ['sep 5 @ 11am', 'sep 5 @ 11am', '11am, sep 5']:
             # TODO sep 5 11pm
             # TODO sep 5, 11pm
-            self.assert_date(date_str, datetime(2017, 9, 5, 11, 0, 0))
+            self.assert_date(date_str, datetime(2017, 9, 5, 11, 0, 0),
+                             Specified(0, 1, 1, 1, 1, 0, 0, 0))
 
         for date_str in [
             '09/05/2012 at 7:35pm'
@@ -71,10 +86,79 @@ class T(unittest.TestCase):
             '9-5-12 7:35 pm'
             "sep 5th '12 at 7:35:00 am"
         ]:
-            self.assert_date(date_str, datetime(2012, 9, 5, 19, 35, 0))
+            self.assert_date(date_str, datetime(2012, 9, 5, 19, 35, 0),
+                             Specified(1, 1, 1, 1, 1, 1, 0, 0))
 
         # Offset timezone
-        self.assertEqual(Date('2014-03-06 15:33:43.764419-05').hour, 20)
+        d = Date('2014-03-06 15:33:43.764419-05')
+        self.assertEqual(d.hour, 20)
+        self.assertEqual(d.specified, Specified(1, 1, 1, 1, 1, 1, 1, 1))
+
+    def test_implicit(self):
+        self.assert_date('2011 nov 11 at 11:11:11',
+                         datetime(2011, 11, 11, 11, 11, 11),
+                         Specified(1, 1, 1, 0, 1, 1, 1, 0))
+
+        self.assert_date('2011 nov 11 at 11:11',
+                         datetime(2011, 11, 11, 11, 11,  0),
+                         Specified(1, 1, 1, 0, 1, 1, 0, 0))
+
+        self.assert_date('2011 nov 11 at 11am',
+                         datetime(2011, 11, 11, 11,  0,  0),
+                         Specified(1, 1, 1, 1, 1, 0, 0, 0))
+
+        self.assert_date('2011 nov 11',
+                         datetime(2011, 11, 11,  0,  0,  0),
+                         Specified(1, 1, 1, 0, 0, 0, 0, 0))
+
+        self.assert_date('2011 nov',
+                         datetime(2011, 11,  1,  0,  0,  0),
+                         Specified(1, 1, 0, 0, 0, 0, 0, 0))
+
+        self.assert_date('2011',
+                         datetime(2011,  1,  1,  0,  0,  0),
+                         Specified(1, 0, 0, 0, 0, 0, 0, 0))
+
+        self.assert_date('nov 11 at 11:11:11',
+                         datetime(2017, 11, 11, 11, 11, 11),
+                         Specified(0, 1, 1, 0, 1, 1, 1, 0))
+
+        self.assert_date('nov 11 at 11:11',
+                         datetime(2017, 11, 11, 11, 11,  0),
+                         Specified(0, 1, 1, 0, 1, 1, 0, 0))
+
+        self.assert_date('nov 11 at 11am',
+                         datetime(2017, 11, 11, 11,  0,  0),
+                         Specified(0, 1, 1, 1, 1, 0, 0, 0))
+
+        self.assert_date('nov 11',
+                         datetime(2017, 11, 11,  0,  0,  0),
+                         Specified(0, 1, 1, 0, 0, 0, 0, 0))
+
+        self.assert_date('nov',
+                         datetime(2017, 11,  1,  0,  0,  0),
+                         Specified(0, 1, 0, 0, 0, 0, 0, 0))
+
+        self.assert_date('11:11:11',
+                         datetime(2017,  6,  17, 11, 11, 11),
+                         Specified(0, 0, 0, 0, 1, 1, 1, 0))
+
+        self.assert_date('11:11',
+                         datetime(2017,  6,  17, 11, 11,  0),
+                         Specified(0, 0, 0, 0, 1, 1, 0, 0))
+
+        self.assert_date('11am',
+                         datetime(2017,  6,  17, 11,  0,  0),
+                         Specified(0, 0, 0, 1, 1, 0, 0, 0))
+
+        self.assert_date("11 o'clock",
+                         datetime(2017, 6, 17, 11, 0, 0),
+                         Specified(0, 0, 0, 0, 1, 0, 0, 0)
+                         )
+
+        self.assert_date('morning',
+                         datetime(2017, 6, 16, DAYTIMES['morning'], 0, 0),
+                         Specified(0, 0, 0, 1, 0, 0, 0, 0))
 
     def test_exceptions(self):
         for x in ['yestserday', 'Satruday', Exception]:
@@ -88,21 +172,25 @@ class T(unittest.TestCase):
             self.assertLess(d.date - now, timedelta(7), day)
             self.assertEqual(d.weekday, i, day)
             self.assertEqual(d.isoweekday, 1 + i, day)
+            self.assertEqual(d.specified, Specified(0, 0, 1, 0, 0, 0, 0, 0))
 
     def test_offset(self):
         self.assert_date(
             'now',
             datetime(2017, 6, 16, 19, 3, 22),
+            Specified(1, 1, 1, 1, 1, 1, 1, 1),
             offset=dict(minute=3)
         )
         self.assert_date(
             'today',
             datetime(2017, 6, 5, 4, 3, 2, 1),
+            Specified(0, 0, 1, 0, 0, 0, 0, 0),
             offset=dict(day=5, hour=4, minute=3, second=2, microsecond=1)
         )
         self.assert_date(
             'yesterday',
             datetime(2017, 6, 1, 2, 3, 4, 5),
+            Specified(0, 0, 1, 0, 0, 0, 0, 0),
             offset=dict(day=1, hour=2, minute=3, second=4, microsecond=5)
         )
         self.assertEqual(Date('august 25th 7:30am', offset=dict(hour=10)).hour, 7)
@@ -115,18 +203,24 @@ class T(unittest.TestCase):
         date_1.microsecond = 1
         date_2 = Date('jan 11')
         date_2.microsecond = 1
-        self.assertEqual(date_1 + '1 day', date_2)
+        date_3 = date_1 + '1 day'
+        self.assertEqual(date_3, date_2)
+        self.assertEqual(date_3.specified, Specified(0, 1, 1, 0, 0, 0, 0, 0),
+                         date_3.specified)
 
         date1 = Date('october 18, 2013 10:04:32 PM')
         date2 = date1 + '10 seconds'
         self.assertEqual(date1.second + 10, date2.second)
+        self.assertEqual(date2.specified, Specified(1, 1, 1, 1, 1, 1, 1, 0))
 
     def test_minus(self):
         date_1 = Date('jan 10')
         date_1.microsecond = 1
         date_2 = Date('jan 5')
         date_2.microsecond = 1
-        self.assertEqual(Date(date_1) - '5 days', date_2)
+        date_3 = Date(date_1) - '5 days'
+        self.assertEqual(date_3, date_2)
+        self.assertEqual(date_3.specified, Specified(0, 1, 1, 0, 0, 0, 0, 0))
 
     def test_adjustment(self):
         d = Date('Jan 1st 2014 at 10 am')
