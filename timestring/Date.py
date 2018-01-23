@@ -56,26 +56,21 @@ TIMEDELTA_UNITS = dict(
 
 
 class Specified:
-    def __init__(self, year, month, day, hour, minute, second, microsecond):
+    def __init__(self, year, month, day, daytime, hour, minute, second, microsecond):
         self.year = year
         self.month = month
         self.day = day
+        self.daytime = daytime
         self.hour = hour
         self.minute = minute
         self.second = second
         self.microsecond = microsecond
 
-    def is_date(self):
-        return self.year and self.month and self.day
-
-    def is_time(self):
-        return self.hour and self.minute and self.second
-
 
 class Date(object):
     def __init__(self, date=None, offset: dict = None, tz: str = None,
                  now: datetime = None, verbose=False, context=None):
-        self._specified = Specified(0, 0, 0, 0, 0, 0, 0)
+        self._specified = Specified(0, 0, 0, 0, 0, 0, 0, 0)
         self._original = date
         if tz:
             tz = pytz.timezone(str(tz))
@@ -124,7 +119,7 @@ class Date(object):
 
                 if date.get('unixtime'):
                     new_date = datetime.fromtimestamp(int(date.get('unixtime')))
-                    self._specified = Specified(1, 1, 1, 1, 1, 1, 1)
+                    self._specified = Specified(1, 1, 1, 1, 1, 1, 1, 1)
 
                 # Number of (days|...) [ago]
                 elif num and unit:
@@ -216,17 +211,19 @@ class Date(object):
                                                     microsecond=0)
                     # No offset because the hour was set.
                     offset = False
-                    self._specified.hour = True  # TODO am/pm
+                    self._specified.daytime = True
 
                 # Hour
                 hour = [date.get(key) for key in ('hour', 'hour_2', 'hour_3') if date.get(key)]
                 if hour:
                     new_date = new_date.replace(hour=int(max(hour)), minute=0, second=0)
-                    am = [date.get(key) for key in ('am', 'am_1') if date.get(key)]
-                    if am and max(am) in ('p', 'pm'):
-                        h = int(max(hour))
-                        if h < 12:
-                            new_date = new_date.replace(hour=h+12)
+                    am_pm = [date.get(key) for key in ('am', 'am_1') if date.get(key)]
+                    if am_pm:
+                        self._specified.daytime = True
+                        if max(am_pm) in ('p', 'pm'):
+                            h = int(max(hour))
+                            if h < 12:
+                                new_date = new_date.replace(hour=h+12)
                     # No offset because the hour was set.
                     offset = False
                     self._specified.hour = True
